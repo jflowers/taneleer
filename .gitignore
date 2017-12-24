@@ -1,0 +1,26 @@
+
+logs
+scratch
+
+.tmp
+.filecache
+.cache
+.build
+
+overrides.*
+
+set.personal.env.bash
+.cfndsl
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+# vim
+.swp

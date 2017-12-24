@@ -1,0 +1,8 @@
+
+Vagrant::Project.configure(:aws) do |env|
+  blank :play do
+    provider{
+      instance_type 't2.micro'
+    }
+  end
+end

@@ -1,0 +1,4 @@
+
+Vagrant::Project.configure(:virtualbox) do |env|
+
+end

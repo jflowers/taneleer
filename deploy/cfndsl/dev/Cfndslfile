@@ -1,0 +1,120 @@
+CloudFormation do
+  Description('Networking Setup')
+  AWSTemplateFormatVersion('2010-09-09')
+
+  vpc_cidr_block = '10.0.0.0/24'
+  subnet_cidr_block = '10.0.0.0/24'
+
+  port_security = {
+    ssh: {
+      port_range: {
+        from: 22,
+        to: 22
+      },
+      protocol: 'tcp',
+      cidr_block: '0.0.0.0/0'
+    },
+    rdp: {
+      port_range: {
+        from: 3389,
+        to: 3389
+      },
+      protocol: 'tcp',
+      cidr_block: '0.0.0.0/0'
+    },
+    winrm: {
+      port_range: {
+        from: 5985,
+        to: 5986
+      },
+      protocol: 'tcp',
+      cidr_block: '0.0.0.0/0'
+    }
+  }
+
+  VPC(:VPC) do
+    EnableDnsSupport true
+    EnableDnsHostnames true
+    InstanceTenancy 'default'
+    CidrBlock vpc_cidr_block
+  end
+
+  InternetGateway(:InternetGateway)
+
+  VPCGatewayAttachment(:GatewayToInternet) do
+    VpcId Ref(:VPC)
+    InternetGatewayId Ref(:InternetGateway)
+  end
+
+  Subnet(:Subnet) do
+    VpcId Ref(:VPC)
+    CidrBlock subnet_cidr_block
+    MapPublicIpOnLaunch true
+  end
+
+  RouteTable(:RouteTable) do
+    VpcId Ref(:VPC)
+  end
+
+  SubnetRouteTableAssociation(:SubnetRouteTableAssociation) do
+    SubnetId Ref(:Subnet)
+    RouteTableId Ref(:RouteTable)
+  end
+
+  Route(:GatewayRoute) do
+    DependsOn :GatewayToInternet
+    RouteTableId Ref(:RouteTable)
+    DestinationCidrBlock '0.0.0.0/0'
+    GatewayId Ref(:InternetGateway)
+  end
+
+  NetworkAcl(:NetworkAcl) do
+    VpcId Ref(:VPC)
+  end
+
+  NetworkAclEntry(:OutBoundNetworkAclEntry) do
+    NetworkAclId Ref(:NetworkAcl)
+    CidrBlock '0.0.0.0/0'
+    Egress true
+    Protocol -1
+    RuleAction 'allow'
+    RuleNumber 100
+  end
+
+  SubnetNetworkAclAssociation(:SubnetNetworkAclAssociation) do
+    SubnetId Ref(:Subnet)
+    NetworkAclId Ref(:NetworkAcl)
+  end
+
+  port_security.each{|port_name, port_info|
+    NetworkAclEntry(:"Inbound#{port_name.to_s.camelcase(:upper)}NetworkAclEntry") do
+      NetworkAclId Ref(:NetworkAcl)
+      CidrBlock port_info[:cidr_block]
+      Egress false
+      Protocol protocol_number(port_info[:protocol])
+      RuleAction 'allow'
+      RuleNumber port_security.keys.find_index(port_name) + 100 + 1
+
+      PortRange({
+        From: port_info[:port_range][:from],
+        To:   port_info[:port_range][:to]
+      })
+    end
+
+    EC2_SecurityGroup(port_name) do
+      GroupName port_name
+      GroupDescription port_name.to_s
+      VpcId Ref(:VPC)
+      SecurityGroupIngress [
+        {
+          CidrIp:     port_info[:cidr_block],
+          IpProtocol: port_info[:protocol],
+          FromPort:   port_info[:port_range][:from],
+          ToPort:     port_info[:port_range][:to]
+        }
+      ]
+    end
+
+  }
+
+end
