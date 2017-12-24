@@ -24,3 +24,6 @@ ehthumbs.db
 Thumbs.db
 # vim
 .swp
+deluge/state
+deluged.log
+deluged.pid

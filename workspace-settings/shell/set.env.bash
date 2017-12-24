@@ -76,3 +76,5 @@ function after_workspace_settings(){
 
   _rake_complete
 }
+
+export PATH=/Applications/Deluge.app/Contents/MacOS:$PATH

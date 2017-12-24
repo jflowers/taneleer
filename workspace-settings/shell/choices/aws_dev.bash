@@ -13,6 +13,6 @@ function set_workspace_settings_to_aws_dev() {
   export VAGRANT_DEFAULT_PROVIDER=aws
   export VAGRANT_CONTEXT="${VAGRANT_DEFAULT_PROVIDER}/dev"
 
-  export TEST_TYPES=acceptance
-  export HATS=cfndsl
+  export TEST_TYPES=:
+  export HATS=cfndsl:deluge
 }
